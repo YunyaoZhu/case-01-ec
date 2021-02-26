@@ -1,0 +1,95 @@
+---
+title: "case-01-ec-write-up"
+author: "Yunyao Zhu"
+date: "2/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+# reference: https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html
+library(dplyr)
+library(qwraps2)
+options(qwraps2_markup = "markdown")
+```
+
+
+```{r}
+dig = read.csv('dig.csv')
+dig
+```
+
+
+
+```{r}
+our_summary1 <-
+    list("CHARACTERISTIC" =
+       list("Age (yr) — mean ± SD" = ~ qwraps2::mean_sd(AGE, digits = getOption("qwraps2_frmt_digits", 1)),
+            "Ejection fraction — mean ± SD" = ~ qwraps2::mean_sd(EJF_PER, digits = getOption("qwraps2_frmt_digits", 1)),
+            "Median duration of CHF — mo" = ~ median(CHFDUR, digits=1, na.rm = TRUE),
+            "Female sex" = ~ perc_n(SEX == 2, digits=1, na_rm = TRUE),
+            "Nonwhite race" = ~ perc_n(RACE == 2, digits=1, na_rm = TRUE),
+            "Age>70 yr" = ~ perc_n(AGE > 70, digits=1, na_rm = TRUE)),
+    "Method of assessing ejection fraction" =
+       list("Radionuclide ventriculography" = ~ perc_n(EJFMETH == 1, digits=1, na_rm = TRUE),
+            "Two-dimensional echocardiography" = ~ perc_n(EJFMETH == 3, digits=1, na_rm = TRUE),
+            "Contrast angiography" = ~ perc_n(EJFMETH == 2, digits=1, na_rm = TRUE),
+            "Cardiothoracic ratio>0.55" = ~ perc_n(CHESTX>0.55, digits=1, na_rm = TRUE)),
+    "NYHA class" =
+       list("I" = ~ perc_n(FUNCTCLS == 1, digits=1, na_rm = TRUE),
+            "II" = ~ perc_n(FUNCTCLS == 2, digits=1, na_rm = TRUE),
+            "III" = ~ perc_n(FUNCTCLS == 3, digits=1, na_rm = TRUE),
+            "IV" = ~ perc_n(FUNCTCLS == 4, digits=1, na_rm = TRUE)),
+    "No. of signs or symptoms of CHF" =
+       list("0" = ~ perc_n(NSYM == 0, digits=1, na_rm = TRUE),
+            "1" = ~ perc_n(NSYM == 1, digits=1, na_rm = TRUE),
+            "2" = ~ perc_n(NSYM == 2, digits=1, na_rm = TRUE),
+            "3" = ~ perc_n(NSYM == 3, digits=1, na_rm = TRUE),
+            "≥4" = ~ perc_n(NSYM >= 4, digits=1, na_rm = TRUE)),
+      "Medical history" =
+       list("Previous myocardial infarction" = ~ perc_n(PREVMI == 1, digits=1, na_rm = TRUE),
+            "Current angina" = ~ perc_n(ANGINA == 1, digits=1, na_rm = TRUE),
+            "Diabetes" = ~ perc_n(DIABETES == 1, digits=1, na_rm = TRUE),
+            "Hypertension" = ~ perc_n(HYPERTEN == 1, digits=1, na_rm = TRUE),
+            "Previous digoxin use" = ~ perc_n(DIGUSE == 1, digits=1, na_rm = TRUE)),
+     "Primary cause of CHF" =
+       list("Ischemic" = ~ perc_n(CHFETIOL == 1, digits=1, na_rm = TRUE),
+            "Nonischemic" = ~ perc_n(CHFETIOL != 1, digits=1, na_rm = TRUE),
+            "  Idiopathic" = ~ perc_n(CHFETIOL == 4, digits=1, na_rm = TRUE),
+            "  Hypertensive" = ~ perc_n(CHFETIOL == 2, digits=1, na_rm = TRUE),
+            "  Other‡" = ~ perc_n(CHFETIOL == 3 | CHFETIOL == 5 | CHFETIOL == 6, digits=1, na_rm = TRUE)),
+     "Concomitant medications" =
+       list("Diuretics" = ~ perc_n(DIURETK == 1 | DIURET == 1, digits=1, na_rm = TRUE),
+            "ACE inhibitors" = ~ perc_n(ACEINHIB == 1, digits=1, na_rm = TRUE),
+            "Nitrates" = ~ perc_n(NITRATES == 1, digits=1, na_rm = TRUE),
+            "Other vasodilators" = ~ perc_n(VASOD == 1, digits=1, na_rm = TRUE)),
+      "Daily dose of study medication prescribed" =
+       list("0.125 mg" = ~ perc_n(DIGDOSE == 0.125, digits=1, na_rm = TRUE),
+            "0.250 mg" = ~ perc_n(DIGDOSE == 0.250, digits=1, na_rm = TRUE),
+            "0.375 mg" = ~ perc_n(DIGDOSE == 0.375, digits=1, na_rm = TRUE),
+            "0.500 mg" = ~ perc_n(DIGDOSE == 0.500, digits=1, na_rm = TRUE))
+    )
+```
+
+
+```{r}
+# whole <- summary_table(dig, our_summary1, by = c("TRTMT"))
+dig$TRTMT = relevel(as.factor(dig$TRTMT), ref = '1')
+levels(dig$TRTMT) <- list("DIGOXIN"="1", "PLACEBO"="0")
+levels(dig$TRTMT)
+```
+
+```{r}
+whole <- summary_table(dplyr::group_by(dig, TRTMT), our_summary1)
+whole
+```
+
+
+```{r}
+median(dig$CHFDUR, digits=1, na.rm = TRUE)
+```
+
+
