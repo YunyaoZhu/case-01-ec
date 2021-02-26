@@ -3,28 +3,29 @@ title: "ec_report"
 author: "Yunyao Zhu"
 date: "2/25/2021"
 output: 
-  pdf_document:
-    latex_engine: xelatex
+  html_document:
+    keep_tex: yes
 ---
-
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r warning=FALSE, message=FALSE}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 # reference: https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html
 library(dplyr)
 library(qwraps2)
-options(qwraps2_markup = "markdown")
+library(survival)
+library(survminer)
+library(broom)
+options(qwraps2_markup = "latex", qwraps2_frmt_digits = 1)
 ```
 
-```{r}
+```{r, echo=FALSE}
 dig = read.csv('dig.csv')
 ```
 
-```{r}
+```{r, echo=FALSE}
 our_summary1 <-
     list("CHARACTERISTIC" =
        list("Age (yr) — mean ± SD" = ~ qwraps2::mean_sd(AGE, digits = getOption("qwraps2_frmt_digits", 1)),
@@ -75,18 +76,163 @@ our_summary1 <-
 ```
 
 
-```{r}
-# whole <- summary_table(dig, our_summary1, by = c("TRTMT"))
+```{r, echo=FALSE}
 dig$TRTMT = relevel(as.factor(dig$TRTMT), ref = '1')
 levels(dig$TRTMT) <- list("DIGOXIN"="1", "PLACEBO"="0")
 ```
 
-```{r}
+```{r, results="asis", echo=FALSE, message=FALSE, warning=FALSE}
 whole <- summary_table(dplyr::group_by(dig, TRTMT), our_summary1)
 whole
+# print(whole, caption = 'caption', markup = 'latex')
+```
+
+
+```{r}
+dig_new <- dig %>%
+  mutate(EJF_PER = case_when( (EJF_PER >= 25 & EJF_PER <= 45) ~  '0.25–0.45',
+                               EJF_PER < 25 ~ '<0.25')) %>%
+  mutate(DIGUSE = case_when( DIGUSE == 1 ~ 'Yes',
+                             DIGUSE == 0 ~ 'No')) %>%
+  mutate(CHFETIOL = case_when( CHFETIOL == 1 ~ 'Ischemic',
+                               CHFETIOL != 1 ~ 'Nonischemic')) %>%
+  mutate(CHESTX = case_when ( CHESTX <= 0.55 ~ '≤0.55',
+                              CHESTX > 0.55 ~ '>0.55')) %>%
+  mutate(FUNCTCLS = case_when( (FUNCTCLS == 1 | FUNCTCLS == 2) ~ 'I or II',
+                               (FUNCTCLS == 3 | FUNCTCLS == 4) ~ 'III or IV'))
+
+```
+
+
+```{r}
+coxm = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT + EJF_PER + DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig_new)
+coxm_coef = tidy(coxm, conf.int = TRUE, exponentiate = TRUE)
+coxm_coef
+```
+
+
+
+```{r}
+coxm_interaction = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT*EJF_PER + TRTMT*DIGUSE + TRTMT*CHFETIOL + TRTMT*CHESTX + TRTMT*FUNCTCLS, data=dig_new)
+coxm_interaction_coef = tidy(coxm_interaction, conf.int = TRUE, exponentiate = TRUE)
+coxm_interaction_coef
 ```
 
 ```{r}
+paste(c("hi", 1), collapse = "")
+```
 
+
+```{r}
+print_results <- function(var1_name, var1_val, var_name_2, var2_val){
+  
+  if(var1_val == 'Overall study population'){
+    numerator = length(which(var_name_2 == var2_val))
+    denominator = length(which(var_name_2 == var2_val | var_name_2 == 1 - var2_val))
+    fraction = format(round(100*numerator/denominator, digits = 1), nsmall = 1)
+  }else{
+  numerator = length(which(var1_name == var1_val & var_name_2 == var2_val))
+  denominator = length(which(var1_name == var1_val))
+  fraction = format(round(100*numerator/denominator, digits = 1), nsmall = 1)
+  }
+return(paste(c(numerator, '/', denominator, ' (', fraction, ')'), collapse=''))
+}
+```
+
+
+
+
+```{r, echo=FALSE}
+our_summary2 <-
+  
+  list("Ejection fraction" =
+       list('0.25-0.45 other' = ~ print_results(EJF_PER, '0.25–0.45', DWHF, 1),
+            '<0.25' = ~ print_results(EJF_PER, '<0.25', DWHF, 1)),
+       
+       "Previous use of digoxin" =
+       list('Yes' = ~ print_results(DIGUSE, 'Yes', DWHF, 1),
+            'No' = ~ print_results(DIGUSE, 'No', DWHF, 1)),
+       
+       "Cause of heart failure" =
+       list('Ischemic' = ~ print_results(CHFETIOL, 'Ischemic', DWHF, 1),
+            'Nonischemic' = ~ print_results(CHFETIOL, 'Nonischemic', DWHF, 1)),
+       
+       "Cardiothoracic ratio" =
+       list('≤0.55' = ~ print_results(CHESTX, '≤0.55', DWHF, 1),
+            '>0.55' = ~ print_results(CHESTX, '>0.55', DWHF, 1)),
+       
+       "NYHA class" =
+       list('I or II' = ~ print_results(FUNCTCLS, 'I or II', DWHF, 1),
+            'III or IV' = ~ print_results(FUNCTCLS, 'III or IV', DWHF, 1)),
+       
+       "Overall study population" =
+        list(' ' = ~ print_results(DWHF, 'Overall study population', DWHF, 1))
+       )
+```
+
+
+```{r, echo=FALSE}
+whole2 <- summary_table(dplyr::group_by(dig_new, TRTMT), our_summary2)
+whole2
+```
+
+
+```{r}
+print_abs_diff <- function(var1_name, var1_val, var_name_2, var2_val){
+  
+  if(var1_val == 'Overall study population'){
+    numerator_dig = length(which(var_name_2 == var2_val & dig_new$TRTMT == 'DIGOXIN'))
+    denominator_dig = length(which(dig_new$TRTMT == 'DIGOXIN'))
+    fraction_dig = round(100*numerator_dig/denominator_dig, digits = 1)
+    
+    numerator_pla = length(which(var_name_2 == var2_val & dig_new$TRTMT == 'PLACEBO'))
+    denominator_pla = length(which(dig_new$TRTMT == 'PLACEBO'))
+    fraction_pla = round(100*numerator_pla/denominator_pla, digits = 1)
+  }else{
+    numerator_dig = length(which(var1_name == var1_val & var_name_2 == var2_val & dig_new$TRTMT == 'DIGOXIN'))
+    denominator_dig = length(which(var1_name == var1_val & dig_new$TRTMT == 'DIGOXIN'))
+    fraction_dig = round(100*numerator_dig/denominator_dig, digits = 1)
+    
+    numerator_pla = length(which(var1_name == var1_val & var_name_2 == var2_val & dig_new$TRTMT == 'PLACEBO'))
+    denominator_pla = length(which(var1_name == var1_val & dig_new$TRTMT == 'PLACEBO'))
+    fraction_pla = round(100*numerator_pla/denominator_pla, digits = 1)
+  }
+  
+return(format(fraction_dig-fraction_pla, nsmall = 1))
+}
+```
+
+
+```{r, echo=FALSE}
+our_summary3 <-
+  
+  list("Ejection fraction" =
+       list('0.25-0.45 other' = ~ print_abs_diff(EJF_PER, '0.25–0.45', DWHF, 1),
+            '<0.25' = ~ print_abs_diff(EJF_PER, '<0.25', DWHF, 1)),
+       
+       "Previous use of digoxin" =
+       list('Yes' = ~ print_abs_diff(DIGUSE, 'Yes', DWHF, 1),
+            'No' = ~ print_abs_diff(DIGUSE, 'No', DWHF, 1)),
+       
+       "Cause of heart failure" =
+       list('Ischemic' = ~ print_abs_diff(CHFETIOL, 'Ischemic', DWHF, 1),
+            'Nonischemic' = ~ print_abs_diff(CHFETIOL, 'Nonischemic', DWHF, 1)),
+       
+       "Cardiothoracic ratio" =
+       list('≤0.55' = ~ print_abs_diff(CHESTX, '≤0.55', DWHF, 1),
+            '>0.55' = ~ print_abs_diff(CHESTX, '>0.55', DWHF, 1)),
+       
+       "NYHA class" =
+       list('I or II' = ~ print_abs_diff(FUNCTCLS, 'I or II', DWHF, 1),
+            'III or IV' = ~ print_abs_diff(FUNCTCLS, 'III or IV', DWHF, 1)),
+       
+       "Overall study population" =
+        list(' ' = ~ print_abs_diff(DWHF, 'Overall study population', DWHF, 1))
+       )
+```
+
+```{r, echo=FALSE}
+whole3 <- summary_table(dig_new, our_summary3)
+whole3
 ```
 
