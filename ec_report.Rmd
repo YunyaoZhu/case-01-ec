@@ -124,6 +124,7 @@ paste(c("hi", 1), collapse = "")
 
 
 ```{r}
+# https://stackoverflow.com/questions/42105336/how-to-round-a-number-and-make-it-show-zeros
 print_results <- function(var1_name, var1_val, var_name_2, var2_val){
   
   if(var1_val == 'Overall study population'){
@@ -236,3 +237,4 @@ whole3 <- summary_table(dig_new, our_summary3)
 whole3
 ```
 
+DeWitt, Peter. "Formatted Summary Statistics and Data Summary Tables with qwraps2." *R Vignettes*. https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html.
