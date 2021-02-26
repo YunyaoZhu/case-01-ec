@@ -458,9 +458,8 @@ coxm_interaction_coef</code></pre>
 ##  9 TRTMTPLACEBO:CHFETI…    1.17     0.0919     1.75  8.04e- 2    0.981     1.41 
 ## 10 TRTMTPLACEBO:CHESTX…    0.897    0.0871    -1.25  2.10e- 1    0.756     1.06 
 ## 11 TRTMTPLACEBO:FUNCTC…    1.10     0.0863     1.12  2.65e- 1    0.930     1.30</code></pre>
-<pre class="r"><code>paste(c(&quot;hi&quot;, 1), collapse = &quot;&quot;)</code></pre>
-<pre><code>## [1] &quot;hi1&quot;</code></pre>
-<pre class="r"><code>print_results &lt;- function(var1_name, var1_val, var_name_2, var2_val){
+<pre class="r"><code># https://stackoverflow.com/questions/42105336/how-to-round-a-number-and-make-it-show-zeros
+print_results &lt;- function(var1_name, var1_val, var_name_2, var2_val){
   
   if(var1_val == &#39;Overall study population&#39;){
     numerator = length(which(var_name_2 == var2_val))
@@ -575,7 +574,13 @@ return(format(fraction_dig-fraction_pla, nsmall = 1))
 ## ~~ &amp; -7.3\\
 ## \hline
 ## \end{tabular}</code></pre>
-<p>DeWitt, Peter. “Formatted Summary Statistics and Data Summary Tables with qwraps2.” <em>R Vignettes</em>. <a href="https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html" class="uri">https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html</a></p>
+<p>From what I understand, there does to seem to be any uncertainty associated with the absolute difference (i.e. “subtracting the percentage of patients with one or more events in the placebo group from the corresponding percentage of patients in the digoxin group”) <span class="citation">(“The Effect of Digoxin on Mortality and Morbidity in Patients with Heart Failure” 1997)</span> in table 4.</p>
+<p>DeWitt, Peter. “Formatted Summary Statistics and Data Summary Tables with qwraps2.” <em>R Vignettes</em>. <a href="https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html" class="uri">https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html</a>.</p>
+<div id="refs" class="references">
+<div id="ref-doi:10.1056/NEJM199702203360801">
+<p>“The Effect of Digoxin on Mortality and Morbidity in Patients with Heart Failure.” 1997. <em>New England Journal of Medicine</em> 336 (8): 525–33. <a href="https://doi.org/10.1056/NEJM199702203360801">https://doi.org/10.1056/NEJM199702203360801</a>.</p>
+</div>
+</div>
 
 
 

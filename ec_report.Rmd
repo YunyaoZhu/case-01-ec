@@ -5,6 +5,8 @@ date: "2/25/2021"
 output: 
   html_document:
     keep_tex: yes
+bibliography: sources.bib
+nocite: '@*'
 ---
 
 ```{r setup, include=FALSE}
@@ -118,9 +120,6 @@ coxm_interaction_coef = tidy(coxm_interaction, conf.int = TRUE, exponentiate = T
 coxm_interaction_coef
 ```
 
-```{r}
-paste(c("hi", 1), collapse = "")
-```
 
 
 ```{r}
@@ -236,5 +235,8 @@ our_summary3 <-
 whole3 <- summary_table(dig_new, our_summary3)
 whole3
 ```
+From what I understand, there does to seem to be any uncertainty associated with the absolute difference (i.e. "subtracting the percentage of patients with one or more events in the placebo group from the corresponding percentage of patients in the digoxin group") [@doi:10.1056/NEJM199702203360801] in table 4.
+
+
 
 DeWitt, Peter. "Formatted Summary Statistics and Data Summary Tables with qwraps2." *R Vignettes*. https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html.
