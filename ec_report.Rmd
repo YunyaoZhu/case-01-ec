@@ -2,9 +2,9 @@
 title: "ec_report"
 author: "Yunyao Zhu"
 date: "2/25/2021"
-output: 
-  html_document:
-    keep_tex: yes
+output:
+  pdf_document:
+    latex_engine: xelatex
 bibliography: sources.bib
 nocite: '@*'
 ---
@@ -20,109 +20,128 @@ library(qwraps2)
 library(survival)
 library(survminer)
 library(broom)
+library(knitr)
 options(qwraps2_markup = "latex", qwraps2_frmt_digits = 1)
 ```
 
-```{r, echo=FALSE}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 dig = read.csv('dig.csv')
 ```
 
-```{r, echo=FALSE}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 our_summary1 <-
     list("CHARACTERISTIC" =
        list("Age (yr) — mean ± SD" = ~ qwraps2::mean_sd(AGE, digits = getOption("qwraps2_frmt_digits", 1)),
             "Ejection fraction — mean ± SD" = ~ qwraps2::mean_sd(EJF_PER, digits = getOption("qwraps2_frmt_digits", 1)),
-            "Median duration of CHF — mo" = ~ median(CHFDUR, digits=1, na.rm = TRUE),
-            "Female sex" = ~ perc_n(SEX == 2, digits=1, na_rm = TRUE),
-            "Nonwhite race" = ~ perc_n(RACE == 2, digits=1, na_rm = TRUE),
-            "Age>70 yr" = ~ perc_n(AGE > 70, digits=1, na_rm = TRUE)),
+            "Median duration of CHF — mo" = ~ median(CHFDUR, digits=1, na.rm = TRUE)),
+       "Demographics" =
+       list("Female sex" = ~ n_perc0(SEX == 2, digits=1, na_rm = TRUE),
+            "Nonwhite race" = ~ n_perc0(RACE == 2, digits=1, na_rm = TRUE),
+            "Age>70 yr" = ~ n_perc0(AGE > 70, digits=1, na_rm = TRUE)),
     "Method of assessing ejection fraction" =
-       list("Radionuclide ventriculography" = ~ perc_n(EJFMETH == 1, digits=1, na_rm = TRUE),
-            "Two-dimensional echocardiography" = ~ perc_n(EJFMETH == 3, digits=1, na_rm = TRUE),
-            "Contrast angiography" = ~ perc_n(EJFMETH == 2, digits=1, na_rm = TRUE),
-            "Cardiothoracic ratio>0.55" = ~ perc_n(CHESTX>0.55, digits=1, na_rm = TRUE)),
+       list("Radionuclide ventriculography" = ~ n_perc0(EJFMETH == 1, digits=1, na_rm = TRUE),
+            "Two-dimensional echocardiography" = ~ n_perc0(EJFMETH == 3, digits=1, na_rm = TRUE),
+            "Contrast angiography" = ~ n_perc0(EJFMETH == 2, digits=1, na_rm = TRUE),
+            "Cardiothoracic ratio>0.55" = ~ n_perc0(CHESTX>0.55, digits=1, na_rm = TRUE)),
     "NYHA class" =
-       list("I" = ~ perc_n(FUNCTCLS == 1, digits=1, na_rm = TRUE),
-            "II" = ~ perc_n(FUNCTCLS == 2, digits=1, na_rm = TRUE),
-            "III" = ~ perc_n(FUNCTCLS == 3, digits=1, na_rm = TRUE),
-            "IV" = ~ perc_n(FUNCTCLS == 4, digits=1, na_rm = TRUE)),
+       list("I" = ~ n_perc0(FUNCTCLS == 1, digits=1, na_rm = TRUE),
+            "II" = ~ n_perc0(FUNCTCLS == 2, digits=1, na_rm = TRUE),
+            "III" = ~ n_perc0(FUNCTCLS == 3, digits=1, na_rm = TRUE),
+            "IV" = ~ n_perc0(FUNCTCLS == 4, digits=1, na_rm = TRUE)),
     "No. of signs or symptoms of CHF" =
-       list("0" = ~ perc_n(NSYM == 0, digits=1, na_rm = TRUE),
-            "1" = ~ perc_n(NSYM == 1, digits=1, na_rm = TRUE),
-            "2" = ~ perc_n(NSYM == 2, digits=1, na_rm = TRUE),
-            "3" = ~ perc_n(NSYM == 3, digits=1, na_rm = TRUE),
-            "≥4" = ~ perc_n(NSYM >= 4, digits=1, na_rm = TRUE)),
+       list("0" = ~ n_perc0(NSYM == 0, digits=1, na_rm = TRUE),
+            "1" = ~ n_perc0(NSYM == 1, digits=1, na_rm = TRUE),
+            "2" = ~ n_perc0(NSYM == 2, digits=1, na_rm = TRUE),
+            "3" = ~ n_perc0(NSYM == 3, digits=1, na_rm = TRUE),
+            ">=4" = ~ n_perc0(NSYM >= 4, digits=1, na_rm = TRUE)),
       "Medical history" =
-       list("Previous myocardial infarction" = ~ perc_n(PREVMI == 1, digits=1, na_rm = TRUE),
-            "Current angina" = ~ perc_n(ANGINA == 1, digits=1, na_rm = TRUE),
-            "Diabetes" = ~ perc_n(DIABETES == 1, digits=1, na_rm = TRUE),
-            "Hypertension" = ~ perc_n(HYPERTEN == 1, digits=1, na_rm = TRUE),
-            "Previous digoxin use" = ~ perc_n(DIGUSE == 1, digits=1, na_rm = TRUE)),
+       list("Previous myocardial infarction" = ~ n_perc0(PREVMI == 1, digits=1, na_rm = TRUE),
+            "Current angina" = ~ n_perc0(ANGINA == 1, digits=1, na_rm = TRUE),
+            "Diabetes" = ~ n_perc0(DIABETES == 1, digits=1, na_rm = TRUE),
+            "Hypertension" = ~ n_perc0(HYPERTEN == 1, digits=1, na_rm = TRUE),
+            "Previous digoxin use" = ~ n_perc0(DIGUSE == 1, digits=1, na_rm = TRUE)),
      "Primary cause of CHF" =
-       list("Ischemic" = ~ perc_n(CHFETIOL == 1, digits=1, na_rm = TRUE),
-            "Nonischemic" = ~ perc_n(CHFETIOL != 1, digits=1, na_rm = TRUE),
-            "  Idiopathic" = ~ perc_n(CHFETIOL == 4, digits=1, na_rm = TRUE),
-            "  Hypertensive" = ~ perc_n(CHFETIOL == 2, digits=1, na_rm = TRUE),
-            "  Other‡" = ~ perc_n(CHFETIOL == 3 | CHFETIOL == 5 | CHFETIOL == 6, digits=1, na_rm = TRUE)),
+       list("Ischemic" = ~ n_perc0(CHFETIOL == 1, digits=1, na_rm = TRUE),
+            "Nonischemic" = ~ n_perc0(CHFETIOL != 1, digits=1, na_rm = TRUE),
+            "  Idiopathic" = ~ n_perc0(CHFETIOL == 4, digits=1, na_rm = TRUE),
+            "  Hypertensive" = ~ n_perc0(CHFETIOL == 2, digits=1, na_rm = TRUE),
+            "  Other‡" = ~ n_perc0(CHFETIOL == 3 | CHFETIOL == 5 | CHFETIOL == 6, digits=1, na_rm = TRUE)),
      "Concomitant medications" =
-       list("Diuretics" = ~ perc_n(DIURETK == 1 | DIURET == 1, digits=1, na_rm = TRUE),
-            "ACE inhibitors" = ~ perc_n(ACEINHIB == 1, digits=1, na_rm = TRUE),
-            "Nitrates" = ~ perc_n(NITRATES == 1, digits=1, na_rm = TRUE),
-            "Other vasodilators" = ~ perc_n(VASOD == 1, digits=1, na_rm = TRUE)),
+       list("Diuretics" = ~ n_perc0(DIURETK == 1 | DIURET == 1, digits=1, na_rm = TRUE),
+            "ACE inhibitors" = ~ n_perc0(ACEINHIB == 1, digits=1, na_rm = TRUE),
+            "Nitrates" = ~ n_perc0(NITRATES == 1, digits=1, na_rm = TRUE),
+            "Other vasodilators" = ~ n_perc0(VASOD == 1, digits=1, na_rm = TRUE)),
       "Daily dose of study medication prescribed" =
-       list("0.125 mg" = ~ perc_n(DIGDOSE == 0.125, digits=1, na_rm = TRUE),
-            "0.250 mg" = ~ perc_n(DIGDOSE == 0.250, digits=1, na_rm = TRUE),
-            "0.375 mg" = ~ perc_n(DIGDOSE == 0.375, digits=1, na_rm = TRUE),
-            "0.500 mg" = ~ perc_n(DIGDOSE == 0.500, digits=1, na_rm = TRUE))
+       list("0.125 mg" = ~ n_perc0(DIGDOSE == 0.125, digits=1, na_rm = TRUE),
+            "0.250 mg" = ~ n_perc0(DIGDOSE == 0.250, digits=1, na_rm = TRUE),
+            "0.375 mg" = ~ n_perc0(DIGDOSE == 0.375, digits=1, na_rm = TRUE),
+            "0.500 mg" = ~ n_perc0(DIGDOSE == 0.500, digits=1, na_rm = TRUE))
     )
 ```
 
-
-```{r, echo=FALSE}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 dig$TRTMT = relevel(as.factor(dig$TRTMT), ref = '1')
 levels(dig$TRTMT) <- list("DIGOXIN"="1", "PLACEBO"="0")
 ```
 
-```{r, results="asis", echo=FALSE, message=FALSE, warning=FALSE}
+## Table 1. Baseline Characteristics of the Study Patients According to Treatment Group
+In the table below (on the second page), the summary statistics of age and ejection fraction of the patients are presented in the form of "mean ± standard deviation". The median of approximated duration of CHF in months is presented in the next row. The summary statistics of all the other variables in the table are in the form of "count (percentage)".
+```{r results="asis", echo=FALSE, message=FALSE, warning=FALSE}
 whole <- summary_table(dplyr::group_by(dig, TRTMT), our_summary1)
 whole
-# print(whole, caption = 'caption', markup = 'latex')
+```
+
+#### Comments on the Discrepancies
+The reproduced Table 1 largely matches the results in the original paper. Some small discrepancies, mostly around 0.1%, are found in certain variables. In general, these differences can potentially be attributed to rounding errors or counts that differ by at most 1. Difference in how the missing values are handled may also explain the discrepancies.
+
+Details of the discrepancies are enumerated below:
+
+(1) In the treatment group (digoxin group), the standard deviation of ejection fraction is calculated to be 8.8%, while in the original paper it was 8.9%. The reproduced result differs by 0.1%, which is not of great concern.
+
+(2) The percentage of non-white patients in the treatment group is calculated to be 14.3% while the value presented in the original paper is 14.4%. This minor difference might be due to a rounding error. A count difference of 1 patient might also cause this difference (i.e. if the original paper assumed the number of non-white patients in the treatment group to be 488 instead of 487, the percentage would be rounded to 14.4% instead of 14.3%).
+
+(3) Similarly, in the treatment group, the percentage of patients with >= 4 signs or symptoms of CHF (congestive heart failure) is calculated to be 80.2% while the paper concluded a value of 80.1%. This small difference might also be caused by either rounding error or count difference of 1 patient.
+
+(4) In the treatment group, the percentage of patients with Nitrates as the concomitant medications is computed to be 42.2% while the value in the paper is 42.1%. Potential causes are similar to those described above.
+
+(5) In the placebo group, the percentage of patients with prescribed daily dose of 0.250 mg is calculated to be 70.1%, while the value in the paper is 70.0%. Potential causes are similar to those described above.
+
+(6) Lastly, in the treatment group, the percentage of patients whose primary cause of CHF is ischemic is computed to be 71.0%, while the value presented in the original paper is 70.8%. This different might be due to the fact that there are 9 missing values in the variable that contains the information about the primary cause of CHF. The percentage of patients having ischemic as their primary cause is 70.8% of all the patients in the treatment group (n = 3397), while they constitute 71.0% of the patients with non-null values (n = 3388) in this variable.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+length(which(!is.na(dig$CHFETIOL) & dig$TRTMT == 'DIGOXIN'))
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+length(which(!is.na(dig$NITRATES) & dig$TRTMT == 'DIGOXIN'))
+```
+
+```{r results="asis", echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+# # Removing all rows with NA produce results that do not match the original table results
+
+# dig_no_na <- na.omit(dig)
+# whole_no_na <- summary_table(dplyr::group_by(dig_no_na, TRTMT), our_summary1)
+# whole_no_na
 ```
 
 
-```{r}
-dig_new <- dig %>%
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+dig.new <- dig %>%
   mutate(EJF_PER = case_when( (EJF_PER >= 25 & EJF_PER <= 45) ~  '0.25–0.45',
                                EJF_PER < 25 ~ '<0.25')) %>%
   mutate(DIGUSE = case_when( DIGUSE == 1 ~ 'Yes',
                              DIGUSE == 0 ~ 'No')) %>%
   mutate(CHFETIOL = case_when( CHFETIOL == 1 ~ 'Ischemic',
                                CHFETIOL != 1 ~ 'Nonischemic')) %>%
-  mutate(CHESTX = case_when ( CHESTX <= 0.55 ~ '≤0.55',
+  mutate(CHESTX = case_when ( CHESTX <= 0.55 ~ '<=0.55',
                               CHESTX > 0.55 ~ '>0.55')) %>%
   mutate(FUNCTCLS = case_when( (FUNCTCLS == 1 | FUNCTCLS == 2) ~ 'I or II',
                                (FUNCTCLS == 3 | FUNCTCLS == 4) ~ 'III or IV'))
-
 ```
 
 
-```{r}
-coxm = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT + EJF_PER + DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig_new)
-coxm_coef = tidy(coxm, conf.int = TRUE, exponentiate = TRUE)
-coxm_coef
-```
-
-
-
-```{r}
-coxm_interaction = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT*EJF_PER + TRTMT*DIGUSE + TRTMT*CHFETIOL + TRTMT*CHESTX + TRTMT*FUNCTCLS, data=dig_new)
-coxm_interaction_coef = tidy(coxm_interaction, conf.int = TRUE, exponentiate = TRUE)
-coxm_interaction_coef
-```
-
-
-
-```{r}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 # https://stackoverflow.com/questions/42105336/how-to-round-a-number-and-make-it-show-zeros
 print_results <- function(var1_name, var1_val, var_name_2, var2_val){
   
@@ -139,14 +158,11 @@ return(paste(c(numerator, '/', denominator, ' (', fraction, ')'), collapse=''))
 }
 ```
 
-
-
-
-```{r, echo=FALSE}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 our_summary2 <-
   
   list("Ejection fraction" =
-       list('0.25-0.45 other' = ~ print_results(EJF_PER, '0.25–0.45', DWHF, 1),
+       list('0.25-0.45' = ~ print_results(EJF_PER, '0.25–0.45', DWHF, 1),
             '<0.25' = ~ print_results(EJF_PER, '<0.25', DWHF, 1)),
        
        "Previous use of digoxin" =
@@ -158,7 +174,7 @@ our_summary2 <-
             'Nonischemic' = ~ print_results(CHFETIOL, 'Nonischemic', DWHF, 1)),
        
        "Cardiothoracic ratio" =
-       list('≤0.55' = ~ print_results(CHESTX, '≤0.55', DWHF, 1),
+       list('<=0.55' = ~ print_results(CHESTX, '<=0.55', DWHF, 1),
             '>0.55' = ~ print_results(CHESTX, '>0.55', DWHF, 1)),
        
        "NYHA class" =
@@ -170,31 +186,28 @@ our_summary2 <-
        )
 ```
 
-
-```{r, echo=FALSE}
-whole2 <- summary_table(dplyr::group_by(dig_new, TRTMT), our_summary2)
-whole2
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+whole2 <- summary_table(dplyr::group_by(dig.new, TRTMT), our_summary2)
 ```
 
-
-```{r}
+```{r echo=FALSE}
 print_abs_diff <- function(var1_name, var1_val, var_name_2, var2_val){
   
   if(var1_val == 'Overall study population'){
-    numerator_dig = length(which(var_name_2 == var2_val & dig_new$TRTMT == 'DIGOXIN'))
-    denominator_dig = length(which(dig_new$TRTMT == 'DIGOXIN'))
+    numerator_dig = length(which(var_name_2 == var2_val & dig.new$TRTMT == 'DIGOXIN'))
+    denominator_dig = length(which(dig.new$TRTMT == 'DIGOXIN'))
     fraction_dig = round(100*numerator_dig/denominator_dig, digits = 1)
     
-    numerator_pla = length(which(var_name_2 == var2_val & dig_new$TRTMT == 'PLACEBO'))
-    denominator_pla = length(which(dig_new$TRTMT == 'PLACEBO'))
+    numerator_pla = length(which(var_name_2 == var2_val & dig.new$TRTMT == 'PLACEBO'))
+    denominator_pla = length(which(dig.new$TRTMT == 'PLACEBO'))
     fraction_pla = round(100*numerator_pla/denominator_pla, digits = 1)
   }else{
-    numerator_dig = length(which(var1_name == var1_val & var_name_2 == var2_val & dig_new$TRTMT == 'DIGOXIN'))
-    denominator_dig = length(which(var1_name == var1_val & dig_new$TRTMT == 'DIGOXIN'))
+    numerator_dig = length(which(var1_name == var1_val & var_name_2 == var2_val & dig.new$TRTMT == 'DIGOXIN'))
+    denominator_dig = length(which(var1_name == var1_val & dig.new$TRTMT == 'DIGOXIN'))
     fraction_dig = round(100*numerator_dig/denominator_dig, digits = 1)
     
-    numerator_pla = length(which(var1_name == var1_val & var_name_2 == var2_val & dig_new$TRTMT == 'PLACEBO'))
-    denominator_pla = length(which(var1_name == var1_val & dig_new$TRTMT == 'PLACEBO'))
+    numerator_pla = length(which(var1_name == var1_val & var_name_2 == var2_val & dig.new$TRTMT == 'PLACEBO'))
+    denominator_pla = length(which(var1_name == var1_val & dig.new$TRTMT == 'PLACEBO'))
     fraction_pla = round(100*numerator_pla/denominator_pla, digits = 1)
   }
   
@@ -202,12 +215,11 @@ return(format(fraction_dig-fraction_pla, nsmall = 1))
 }
 ```
 
-
-```{r, echo=FALSE}
+```{r warning=FALSE, message=FALSE, echo=FALSE}
 our_summary3 <-
   
   list("Ejection fraction" =
-       list('0.25-0.45 other' = ~ print_abs_diff(EJF_PER, '0.25–0.45', DWHF, 1),
+       list('0.25-0.45' = ~ print_abs_diff(EJF_PER, '0.25–0.45', DWHF, 1),
             '<0.25' = ~ print_abs_diff(EJF_PER, '<0.25', DWHF, 1)),
        
        "Previous use of digoxin" =
@@ -219,7 +231,7 @@ our_summary3 <-
             'Nonischemic' = ~ print_abs_diff(CHFETIOL, 'Nonischemic', DWHF, 1)),
        
        "Cardiothoracic ratio" =
-       list('≤0.55' = ~ print_abs_diff(CHESTX, '≤0.55', DWHF, 1),
+       list('<=0.55' = ~ print_abs_diff(CHESTX, '<=0.55', DWHF, 1),
             '>0.55' = ~ print_abs_diff(CHESTX, '>0.55', DWHF, 1)),
        
        "NYHA class" =
@@ -231,12 +243,73 @@ our_summary3 <-
        )
 ```
 
-```{r, echo=FALSE}
-whole3 <- summary_table(dig_new, our_summary3)
-whole3
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+whole3 <- summary_table(dig.new, our_summary3)
 ```
-From what I understand, there does to seem to be any uncertainty associated with the absolute difference (i.e. "subtracting the percentage of patients with one or more events in the placebo group from the corresponding percentage of patients in the digoxin group") [@doi:10.1056/NEJM199702203360801] in table 4.
 
 
+## Table 4. Effect of the Study Drug on the Occurrence of Death and Hospitalization due to Worsening Heart Failure
+
+### Table 4a. Summary Statistics of the Occurrence of Death and Hospitalization due to Worsening Heart Failure with respect to Selected Variables
+
+In this first part of table 4, the first two columns record the number of percentage of patients with certain conditions in the treatment group and the placebo group. The table values in the first two columns are presented in the form "no. of patients with >= 1 event / no. randomized (percentage)".
+
+The third column records the absolute difference of the computed percentages between the treatment group and the placebo group.
+
+```{r results = 'asis', warning=FALSE, message=FALSE, echo=FALSE}
+table4 <- cbind(whole2, whole3)
+print(table4, cname = c("DIGOXIN", "PLACEBO", "ABSOLUTE DIFFERENCE"))
+```
+
+The computed summary statistics as well as the absolute differences match exactly with the values in original paper. However, there does to seem to be any uncertainties associated with the absolute difference, which is calculated by "subtracting the percentage of patients with one or more events in the placebo group from the corresponding percentage of patients in the digoxin group" [@doi:10.1056/NEJM199702203360801]. It is not clear how the authors of the original paper calculated the 95% confidence interval of the absolute differences.
+
+### Table 4b. Risk Ratio with 95% CI
+
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+coxm_interaction = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT*EJF_PER + TRTMT*DIGUSE + TRTMT*CHFETIOL + TRTMT*CHESTX + TRTMT*FUNCTCLS, data=dig.new)
+coxm_interaction_coef = kable(tidy(coxm_interaction, conf.int = TRUE, exponentiate = TRUE))
+coxm_interaction_coef
+```
 
 DeWitt, Peter. "Formatted Summary Statistics and Data Summary Tables with qwraps2." *R Vignettes*. https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html.
+
+```{r}
+# Other Models
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+# Model 0 with no interactions
+coxm = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT + EJF_PER + DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
+coxm_coef = tidy(coxm, conf.int = TRUE, exponentiate = TRUE)
+coxm_coef
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+coxm_int_ejf = coxph(Surv(DWHFDAYS, DWHF) ~  TRTMT*EJF_PER + TRTMT*DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
+coxm_int_ejf_coef = tidy(coxm_int_ejf, conf.int = TRUE, exponentiate = TRUE)
+coxm_int_ejf_coef
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+coxm_int_diguse = coxph(Surv(DWHFDAYS, DWHF) ~  TRTMT*EJF_PER + TRTMT*DIGUSE + CHFETIOL + TRTMT*CHESTX + FUNCTCLS, data=dig.new)
+coxm_int_diguse_coef = tidy(coxm_int_diguse, conf.int = TRUE, exponentiate = TRUE)
+coxm_int_diguse_coef
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+coxm_int_chf = coxph(Surv(DWHFDAYS, DWHF) ~  EJF_PER + DIGUSE + TRTMT*CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
+coxm_int_chf_coef = tidy(coxm_int_chf, conf.int = TRUE, exponentiate = TRUE)
+coxm_int_chf_coef
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+coxm_int_che = coxph(Surv(DWHFDAYS, DWHF) ~  EJF_PER + DIGUSE + CHFETIOL + TRTMT*CHESTX + FUNCTCLS, data=dig.new)
+coxm_int_che_coef = tidy(coxm_int_che, conf.int = TRUE, exponentiate = TRUE)
+coxm_int_che_coef
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+coxm_int_fun = coxph(Surv(DWHFDAYS, DWHF) ~  EJF_PER + DIGUSE + CHFETIOL + CHESTX + TRTMT*FUNCTCLS, data=dig.new)
+coxm_int_fun_coef = tidy(coxm_int_fun, conf.int = TRUE, exponentiate = TRUE)
+coxm_int_fun_coef
+```
