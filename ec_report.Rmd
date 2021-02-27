@@ -1,5 +1,5 @@
 ---
-title: "ec_report"
+title: "Reproducing Tables 1 and 4 from the NEJM article on the DIG trial"
 author: "Yunyao Zhu"
 date: "2/25/2021"
 output:
@@ -41,8 +41,9 @@ our_summary1 <-
     "Method of assessing ejection fraction" =
        list("Radionuclide ventriculography" = ~ n_perc0(EJFMETH == 1, digits=1, na_rm = TRUE),
             "Two-dimensional echocardiography" = ~ n_perc0(EJFMETH == 3, digits=1, na_rm = TRUE),
-            "Contrast angiography" = ~ n_perc0(EJFMETH == 2, digits=1, na_rm = TRUE),
-            "Cardiothoracic ratio>0.55" = ~ n_perc0(CHESTX>0.55, digits=1, na_rm = TRUE)),
+            "Contrast angiography" = ~ n_perc0(EJFMETH == 2, digits=1, na_rm = TRUE)),
+    "Cardiothoracic ratio>0.55" =
+       list(" " = ~ n_perc0(CHESTX>0.55, digits=1, na_rm = TRUE)),
     "NYHA class" =
        list("I" = ~ n_perc0(FUNCTCLS == 1, digits=1, na_rm = TRUE),
             "II" = ~ n_perc0(FUNCTCLS == 2, digits=1, na_rm = TRUE),
@@ -58,8 +59,9 @@ our_summary1 <-
        list("Previous myocardial infarction" = ~ n_perc0(PREVMI == 1, digits=1, na_rm = TRUE),
             "Current angina" = ~ n_perc0(ANGINA == 1, digits=1, na_rm = TRUE),
             "Diabetes" = ~ n_perc0(DIABETES == 1, digits=1, na_rm = TRUE),
-            "Hypertension" = ~ n_perc0(HYPERTEN == 1, digits=1, na_rm = TRUE),
-            "Previous digoxin use" = ~ n_perc0(DIGUSE == 1, digits=1, na_rm = TRUE)),
+            "Hypertension" = ~ n_perc0(HYPERTEN == 1, digits=1, na_rm = TRUE)),
+    "Previous digoxin use" =
+       list(" " = ~ n_perc0(DIGUSE == 1, digits=1, na_rm = TRUE)),
      "Primary cause of CHF" =
        list("Ischemic" = ~ n_perc0(CHFETIOL == 1, digits=1, na_rm = TRUE),
             "Nonischemic" = ~ n_perc0(CHFETIOL != 1, digits=1, na_rm = TRUE),
@@ -85,28 +87,29 @@ levels(dig$TRTMT) <- list("DIGOXIN"="1", "PLACEBO"="0")
 ```
 
 ## Table 1. Baseline Characteristics of the Study Patients According to Treatment Group
-In the table below (on the second page), the summary statistics of age and ejection fraction of the patients are presented in the form of "mean ± standard deviation". The median of approximated duration of CHF in months is presented in the next row. The summary statistics of all the other variables in the table are in the form of "count (percentage)".
+In the table below (on the second page), the summary statistics of age and ejection fraction of the patients are presented in the form of "mean ± standard deviation". The median of approximated duration of CHF (congestive heart failure) in months is presented in the next row. The summary statistics of all the other variables in the table are in the form of "count (percentage)".
 ```{r results="asis", echo=FALSE, message=FALSE, warning=FALSE}
 whole <- summary_table(dplyr::group_by(dig, TRTMT), our_summary1)
 whole
 ```
 
-#### Comments on the Discrepancies
-The reproduced Table 1 largely matches the results in the original paper. Some small discrepancies, mostly around 0.1%, are found in certain variables. In general, these differences can potentially be attributed to rounding errors or counts that differ by at most 1. Difference in how the missing values are handled may also explain the discrepancies.
+\newpage 
+### Comments on the Discrepancies
+The reproduced Table 1 largely matches the corresponding table in the original paper. Some small discrepancies, mostly around 0.1%, are found in certain variables. In general, these differences can potentially be attributed to rounding errors or counts that differ by at most 1. Differences in how the missing values are handled may also explain the discrepancies.
 
 Details of the discrepancies are enumerated below:
 
-(1) In the treatment group (digoxin group), the standard deviation of ejection fraction is calculated to be 8.8%, while in the original paper it was 8.9%. The reproduced result differs by 0.1%, which is not of great concern.
+(1) In the treatment group (digoxin group), the standard deviation of ejection fraction is calculated to be 8.8% while in the original paper it was 8.9%. The reproduced result differs by 0.1%, which is not of great concern.
 
 (2) The percentage of non-white patients in the treatment group is calculated to be 14.3% while the value presented in the original paper is 14.4%. This minor difference might be due to a rounding error. A count difference of 1 patient might also cause this difference (i.e. if the original paper assumed the number of non-white patients in the treatment group to be 488 instead of 487, the percentage would be rounded to 14.4% instead of 14.3%).
 
-(3) Similarly, in the treatment group, the percentage of patients with >= 4 signs or symptoms of CHF (congestive heart failure) is calculated to be 80.2% while the paper concluded a value of 80.1%. This small difference might also be caused by either rounding error or count difference of 1 patient.
+(3) Similarly, in the treatment group, the percentage of patients with >= 4 signs or symptoms of CHF is calculated to be 80.2% while the paper concluded a value of 80.1%. This small difference might also be caused by either rounding error or count difference of 1 patient.
 
 (4) In the treatment group, the percentage of patients with Nitrates as the concomitant medications is computed to be 42.2% while the value in the paper is 42.1%. Potential causes are similar to those described above.
 
-(5) In the placebo group, the percentage of patients with prescribed daily dose of 0.250 mg is calculated to be 70.1%, while the value in the paper is 70.0%. Potential causes are similar to those described above.
+(5) In the placebo group, the percentage of patients with a prescribed daily dose of 0.250 mg is calculated to be 70.1% while the value in the paper is 70.0%. Potential causes are similar to those described above.
 
-(6) Lastly, in the treatment group, the percentage of patients whose primary cause of CHF is ischemic is computed to be 71.0%, while the value presented in the original paper is 70.8%. This different might be due to the fact that there are 9 missing values in the variable that contains the information about the primary cause of CHF. The percentage of patients having ischemic as their primary cause is 70.8% of all the patients in the treatment group (n = 3397), while they constitute 71.0% of the patients with non-null values (n = 3388) in this variable.
+(6) Lastly, in the treatment group, the percentage of patients whose primary cause of CHF is ischemic is computed to be 71.0% while the value presented in the original paper is 70.8%. This difference might be due to the fact that there are 9 missing values in the variable that contains the information about the primary cause of CHF. The percentage of patients having ischemic as their primary cause is 70.8% of all the patients in the treatment group (n = 3397) while they constitute 71.0% of the patients with non-null values (n = 3388) in this variable.
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
@@ -247,37 +250,102 @@ our_summary3 <-
 whole3 <- summary_table(dig.new, our_summary3)
 ```
 
-
+\newpage 
 ## Table 4. Effect of the Study Drug on the Occurrence of Death and Hospitalization due to Worsening Heart Failure
 
 ### Table 4a. Summary Statistics of the Occurrence of Death and Hospitalization due to Worsening Heart Failure with respect to Selected Variables
 
-In this first part of table 4, the first two columns record the number of percentage of patients with certain conditions in the treatment group and the placebo group. The table values in the first two columns are presented in the form "no. of patients with >= 1 event / no. randomized (percentage)".
+In this first part of Table 4, the first two columns record the number of percentage of patients with certain conditions in the treatment group and in the placebo group. The table values in the first two columns are presented in the form of "no. of patients with >= 1 event / no. randomized (percentage)".
 
-The third column records the absolute difference of the computed percentages between the treatment group and the placebo group.
+The third column records the absolute differences of the computed percentages between the treatment group and the placebo group.
 
 ```{r results = 'asis', warning=FALSE, message=FALSE, echo=FALSE}
 table4 <- cbind(whole2, whole3)
 print(table4, cname = c("DIGOXIN", "PLACEBO", "ABSOLUTE DIFFERENCE"))
 ```
 
-The computed summary statistics as well as the absolute differences match exactly with the values in original paper. However, there does to seem to be any uncertainties associated with the absolute difference, which is calculated by "subtracting the percentage of patients with one or more events in the placebo group from the corresponding percentage of patients in the digoxin group" [@doi:10.1056/NEJM199702203360801]. It is not clear how the authors of the original paper calculated the 95% confidence interval of the absolute differences.
 
-### Table 4b. Risk Ratio with 95% CI
+
+The computed summary statistics as well as the absolute differences match exactly with the values in the original paper. However, there does to seem to be any uncertainties associated with the absolute differences, which are calculated by "subtracting the percentage of patients with one or more events in the placebo group from the corresponding percentage of patients in the digoxin group" [@doi:10.1056/NEJM199702203360801]. It is not clear how the authors of the original paper calculated the 95% CI of the absolute differences.
+
 
 ```{r warning=FALSE, message=FALSE, echo=FALSE}
-coxm_interaction = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT*EJF_PER + TRTMT*DIGUSE + TRTMT*CHFETIOL + TRTMT*CHESTX + TRTMT*FUNCTCLS, data=dig.new)
-coxm_interaction_coef = kable(tidy(coxm_interaction, conf.int = TRUE, exponentiate = TRUE))
-coxm_interaction_coef
+dig.new <- dig.new %>%
+  rename(Trtmt. = TRTMT,
+         Eject.Frac. = EJF_PER,
+          Prev.Use. = DIGUSE,
+         Cause. = CHFETIOL,
+       CT.Ratio = CHESTX,
+       NYHA.Class. =  FUNCTCLS
+        )
+levels(dig.new$Trtmt.) <- list("Dig"="DIGOXIN", "Pla"="PLACEBO")
+
 ```
+
+\newpage
+### Table 4b1. Risk Ratio with 95% CI (default-baseline*)
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+dig.new$Trtmt. = relevel(as.factor(dig.new$Trtmt.), ref = 'Pla')
+dig.new$Eject.Frac. = relevel(as.factor(dig.new$Eject.Frac.), ref = '<0.25')
+dig.new$Prev.Use. = relevel(as.factor(dig.new$Prev.Use.), ref = 'No')
+dig.new$Cause. = relevel(as.factor(dig.new$Cause.), ref = 'Nonischemic')
+dig.new$CT.Ratio = relevel(as.factor(dig.new$CT.Ratio), ref = '>0.55')
+dig.new$NYHA.Class. = relevel(as.factor(dig.new$NYHA.Class.), ref = 'III or IV')
+
+coxm_interaction = coxph(Surv(WHFDAYS, WHF) ~ Trtmt.*Eject.Frac. + Trtmt.*Prev.Use. + Trtmt.*Cause. + Trtmt.*CT.Ratio + Trtmt.*NYHA.Class., data=dig.new)
+kable(tidy(coxm_interaction, conf.int = TRUE, exponentiate = TRUE))
+```
+
+(*) Default-baseline refers to marking the variable values listed on the second line (for each variable in Table 4 in the original paper) as the baseline. For instance, for ejection fraction, the value on the first line is "0.25–0.45" and the value on the second line is "<0.25". Thus, in the table above, "<0.25" is set as the baseline value.
+
+### Table 4b2. Risk Ratio with 95% CI (reversed-baseline**)
+```{r warning=FALSE, message=FALSE, echo=FALSE}
+dig.new$Trtmt. = relevel(as.factor(dig.new$Trtmt.), ref = 'Dig')
+dig.new$Eject.Frac. = relevel(as.factor(dig.new$Eject.Frac.), ref = '0.25–0.45')
+dig.new$Prev.Use. = relevel(as.factor(dig.new$Prev.Use.), ref = 'Yes')
+dig.new$Cause. = relevel(as.factor(dig.new$Cause.), ref = 'Ischemic')
+dig.new$CT.Ratio = relevel(as.factor(dig.new$CT.Ratio), ref = '<=0.55')
+dig.new$NYHA.Class. = relevel(as.factor(dig.new$NYHA.Class.), ref = 'I or II')
+
+coxm_interaction_2 = coxph(Surv(WHFDAYS, WHF) ~ Trtmt.*Eject.Frac. + Trtmt.*Prev.Use. + Trtmt.*Cause. + Trtmt.*CT.Ratio + Trtmt.*NYHA.Class., data=dig.new)
+kable(tidy(coxm_interaction_2, conf.int = TRUE, exponentiate = TRUE))
+```
+
+(**) The table above reversed the baselines. Now all the variable values listed on the first line are marked as the baseline values.
+
+The risk ratio values do not match the values in the original paper. There are several reasons that might explain this discrepancy.
+
+
+(1) Ambiguous Model Specification
+
+According to the notes below Table 4 in the original paper, it is stated that the "risk ratios and confidence intervals (CI) were estimated from the Cox proportional-hazards model". In addition, the author listed the P values for the interaction terms. 
+
+It is also mentioned in the statistical analysis section that the Cox model was used to "test for interactions
+between the study assignments and predefined variables." 
+
+It is not very clear whether the model used to generate table 4 included all the interaction terms or a subset of interaction terms. Tables 4b1 and 4b2 are based on Cox proportional-hazards models with all the interaction terms.
+
+(2) Potentially Inaccurate Use of Risk Ratio
+
+According to CDC, a risk ratio is computed by "dividing the risk (incidence proportion, attack rate) in group 1 by the risk (incidence proportion, attack rate) in group 2". However, in this paper, since the risk ratios are estimated from the Cox model, the authors seem to conflate the meaning of risk ratios and that of hazard ratios. My guess is that the risk ratios in the paper are referring to the hazard ratios, so they should correspond to the "estimate" columns in tables 4b1 and 4b2, which contain the exponentiated estimated coefficients in the Cox models.
+
+(3) Presence of Risk Ratios for All Levels of the Categorical Predictors
+
+If it is the case that the authors used the exponentiated estimated coefficients as the risk ratios, it seems unusual that they included the estimated coefficients for all the levels in categorical predictors. Typically, the models will automatically mark one of the levels in a categorical predictor as the baseline. Thus, in an attempt to reproduce the results and present the estimated coefficients for all the levels, I manually set different baselines for tables 4b1 and 4b2.
+
+
+In summary, while the risk ratios (and their 95% CI) in the paper are all values less than 1, some of the exponentiated estimated coefficients I computed using the Cox model are greater than 1. It seems challenging to reproduce the risk ratios without having access to the exact Cox model used by the authors of the paper.
+
+
+### References
 
 DeWitt, Peter. "Formatted Summary Statistics and Data Summary Tables with qwraps2." *R Vignettes*. https://cran.r-project.org/web/packages/qwraps2/vignettes/summary-statistics.html.
 
-```{r}
-# Other Models
-```
+CDC. "Lesson 3: Measures of Risk." *Principles of Epidemiology in Public Health Practice, Third Edition
+An Introduction to Applied Epidemiology and Biostatistics.* https://www.cdc.gov/csels/dsepd/ss1978/lesson3/section5.html
 
 ```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+# Other models
 # Model 0 with no interactions
 coxm = coxph(Surv(DWHFDAYS, DWHF) ~ TRTMT + EJF_PER + DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
 coxm_coef = tidy(coxm, conf.int = TRUE, exponentiate = TRUE)
@@ -285,13 +353,22 @@ coxm_coef
 ```
 
 ```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
-coxm_int_ejf = coxph(Surv(DWHFDAYS, DWHF) ~  TRTMT*EJF_PER + TRTMT*DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
+coxm_test = coxph(Surv(DWHFDAYS, DWHF) ~ EJF_PER, data=dig.new)
+coxm_test_coef = tidy(coxm_test, conf.int = TRUE, exponentiate = TRUE)
+coxm_test_coef
+```
+
+```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+coxm_int_ejf = coxph(Surv(DWHFDAYS, DWHF) ~  TRTMT*EJF_PER + DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
 coxm_int_ejf_coef = tidy(coxm_int_ejf, conf.int = TRUE, exponentiate = TRUE)
 coxm_int_ejf_coef
 ```
 
+
+
+
 ```{r warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
-coxm_int_diguse = coxph(Surv(DWHFDAYS, DWHF) ~  TRTMT*EJF_PER + TRTMT*DIGUSE + CHFETIOL + TRTMT*CHESTX + FUNCTCLS, data=dig.new)
+coxm_int_diguse = coxph(Surv(DWHFDAYS, DWHF) ~  EJF_PER + TRTMT*DIGUSE + CHFETIOL + CHESTX + FUNCTCLS, data=dig.new)
 coxm_int_diguse_coef = tidy(coxm_int_diguse, conf.int = TRUE, exponentiate = TRUE)
 coxm_int_diguse_coef
 ```
